@@ -21,7 +21,7 @@ function sendSnippet(snippet) {
   let blob = new Blob([JSON.stringify(body)], { type: "application/json" });
 
   const req = new XMLHttpRequest();
-  const url = "http://localhost:8080/snippet/";
+  const url = "/snippet/";
   req.open("POST", url);
 
   req.send(blob);
@@ -33,7 +33,7 @@ function sendSnippet(snippet) {
 
 async function getState() {
   const req = new XMLHttpRequest();;
-  const url = "http://localhost:8080/state/";
+  const url = "/state/";
   req.open("GET", url);
 
   req.send();
