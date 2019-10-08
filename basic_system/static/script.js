@@ -1,5 +1,5 @@
 let dmp = null;
-let prevPatch = "";
+let id = '';
 
 document.addEventListener("DOMContentLoaded", async function() {
   dmp = new diff_match_patch();
@@ -28,11 +28,12 @@ function getPatch(e) {
   let body = JSON.parse(e.data);
   // Patch doesn't get applied if it's the same as the last patch that the
   // client sent
-  if (body.patch && body.patch != prevPatch) {
+  if (body.patch) {
     let patches = dmp.patch_fromText(body.patch);
     [doc.value] = dmp.patch_apply(patches, doc.value);
     doc.prevValue = doc.value;
-    prevPatch = "";
+  } else if (body.id) {
+    id = body.id;
   }
 }
 
@@ -40,7 +41,7 @@ function getPatch(e) {
 // to be applied to the global doc
 function sendPatch(prev, curr) {
   let patch = dmp.patch_toText(dmp.patch_make(prev, curr))
-  let body = { patch };
+  let body = { patch, id };
 
   const req = new XMLHttpRequest();
   const url = "/patch/";
@@ -53,8 +54,6 @@ function sendPatch(prev, curr) {
       console.log(req.response);
     }
   };
-
-  prevPatch = patch;
 }
 
 async function getState() {

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"io/ioutil"
 	"log"
@@ -17,6 +18,7 @@ var (
 )
 
 type RequestBody struct {
+	ID    string `json:"id"`
 	Patch string `json:"patch"`
 }
 
@@ -30,16 +32,16 @@ type EventStream struct {
 type Broker struct {
 
 	// Events are pushed to this channel by the main events-gathering routine
-	Notifier chan []byte
+	Notifier chan map[string][]byte
 
 	// New client connections
-	newClients chan chan []byte
+	newClients chan map[string]chan []byte
 
 	// Closed client connections
-	closingClients chan chan []byte
+	closingClients chan string
 
 	// Client connections registry
-	clients map[chan []byte]bool
+	clients map[string]chan []byte
 }
 
 func init() {
@@ -52,10 +54,10 @@ func init() {
 func NewBroker() (broker *Broker) {
 	// Instantiate a broker
 	broker = &Broker{
-		Notifier:       make(chan []byte),
-		newClients:     make(chan chan []byte),
-		closingClients: make(chan chan []byte),
-		clients:        make(map[chan []byte]bool),
+		Notifier:       make(chan map[string][]byte),
+		newClients:     make(chan map[string]chan []byte),
+		closingClients: make(chan string),
+		clients:        make(map[string]chan []byte),
 	}
 
 	// Set it running - listening and broadcasting events
@@ -68,21 +70,26 @@ func NewBroker() (broker *Broker) {
 func (broker *Broker) listen() {
 	for {
 		select {
-		case s := <-broker.newClients:
-			// A new client has connected.
-			// Register their message channel
-			broker.clients[s] = true
+		case client := <-broker.newClients:
+			for id, c := range client {
+				// A new client has connected.
+				// Register their message channel
+				broker.clients[id] = c
+			}
 			log.Printf("Client added. %d registered clients", len(broker.clients))
-		case s := <-broker.closingClients:
+		case id := <-broker.closingClients:
 			// A client has dettached and we want to
 			// stop sending them messages.
-			delete(broker.clients, s)
+			delete(broker.clients, id)
 			log.Printf("Removed client. %d registered clients", len(broker.clients))
 		case event := <-broker.Notifier:
-			// We got a new event from the outside!
 			// Send event to all connected clients
-			for clientMessageChan, _ := range broker.clients {
-				clientMessageChan <- event
+			for senderID, msg := range event {
+				for clientID, clientMessageChan := range broker.clients {
+					if clientID != senderID {
+						clientMessageChan <- msg
+					}
+				}
 			}
 		}
 	}
@@ -107,13 +114,21 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	// connections registry
 	messageChan := make(chan []byte)
 
+	var id uuid.UUID
+	for {
+		id = uuid.New()
+		if _, ok := broker.clients[id.String()]; !ok {
+			break
+		}
+	}
+
 	// Signal the broker that we have a new connection
-	broker.newClients <- messageChan
+	broker.newClients <- map[string]chan []byte{id.String(): messageChan}
 
 	// Remove this client from the map of connected clients
 	// when this handler exits.
 	defer func() {
-		broker.closingClients <- messageChan
+		broker.closingClients <- id.String()
 	}()
 
 	// Listen to connection close and un-register messageChan
@@ -121,8 +136,20 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		<-notify
-		broker.closingClients <- messageChan
+		broker.closingClients <- id.String()
 	}()
+
+	idBody := RequestBody{ID: id.String()}
+	idJSON, err := json.Marshal(idBody)
+	if err != nil {
+		log.Println("Unable to create ID for connection:", err)
+		http.Error(w, "Unable to create ID for connection", http.StatusInternalServerError)
+		return
+	}
+	// Send assigned id to client
+	fmt.Fprintf(w, "data:%s\n\n", string(idJSON))
+	// Clear buffer
+	flusher.Flush()
 
 	// Block on messageChan to wait for next event
 	for m := range messageChan {
@@ -158,7 +185,7 @@ func patchHandler(w http.ResponseWriter, r *http.Request) {
 	patchChan <- patches
 
 	// Send to other connections
-	broker.Notifier <- reqBody
+	broker.Notifier <- map[string][]byte{patchBody.ID: reqBody}
 }
 
 func stateHandler(w http.ResponseWriter, r *http.Request) {
