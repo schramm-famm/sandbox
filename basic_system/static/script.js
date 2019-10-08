@@ -1,6 +1,7 @@
 let dmp = null;
 
 document.addEventListener("DOMContentLoaded", async function() {
+  dmp = new diff_match_patch();
   const doc = document.querySelector("#doc");
 
   let gotInitialDoc = false
