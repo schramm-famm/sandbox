@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gorilla/websocket"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type Hub struct {
@@ -18,6 +19,8 @@ type Message struct {
 	content []byte
 	sender  *Client
 }
+
+var dmp *diffmatchpatch.DiffMatchPatch = diffmatchpatch.New()
 
 func newHub() *Hub {
 	return &Hub{
@@ -49,7 +52,12 @@ func (h *Hub) run() {
 			}
 
 		case message := <-h.broadcast:
-			h.doc += string(message.content)
+			patches, err := dmp.PatchFromText(string(message.content))
+			if err != nil {
+				return
+			}
+			h.doc, _ = dmp.PatchApply(patches, h.doc)
+
 			for client := range h.clients {
 				if client != message.sender {
 					client.send <- message.content
