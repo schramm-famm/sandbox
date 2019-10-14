@@ -1,56 +1,38 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
-var doc string = ""
+var upgrader = websocket.Upgrader{}
 
-type RequestBody struct {
-	Snippet string `json:"snippet"`
-}
-
-func snippetHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
-
+func connect(h *Hub, w http.ResponseWriter, r *http.Request) {
+	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Failed to read request body:", err)
+		log.Print("upgrade:", err)
 		return
 	}
 
-	data := RequestBody{}
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.Println("Failed to parse JSON:", err)
-		return
-	}
+	client := &Client{c, h, make(chan []byte)}
 
-	fmt.Println(data)
-	doc += data.Snippet
-}
+	h.register <- client
 
-func stateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	fmt.Fprintf(w, doc)
+	go client.read()
+	go client.write()
 }
 
 func main() {
 	fs := http.FileServer(http.Dir("static"))
 
+	h := newHub()
+	go h.run()
+
 	http.Handle("/", fs)
-	http.HandleFunc("/snippet/", snippetHandler)
-	http.HandleFunc("/state/", stateHandler)
+	http.HandleFunc("/connect", func(w http.ResponseWriter, r *http.Request) {
+		connect(h, w, r)
+	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
