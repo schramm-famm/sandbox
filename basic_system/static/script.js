@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   const doc = document.querySelector("#doc");
 
   doc.value = await getState().catch(err => console.log(err));
-
+  doc.prevValue = doc.value;
   // On focus, save the value of the doc before any input
   doc.addEventListener("focus", () => doc.prevValue = doc.value)
 
@@ -30,11 +30,44 @@ function getPatch(e) {
   // client sent
   if (body.patch) {
     let patches = dmp.patch_fromText(body.patch);
+    const prevPos = doc.selectionStart; //the current cursor position
     [doc.value] = dmp.patch_apply(patches, doc.value);
+    console.log(prevPos);
+    if(prevPos !== null){ // if there is a cursor position, update it.
+      updateCursorPostition(doc.prevValue, doc.value, prevPos);
+    }
     doc.prevValue = doc.value;
   } else if (body.id) {
     id = body.id;
   }
+}
+
+//sets the cursor position
+function setCaretPosition(ctrl, pos) {
+  // Modern browsers
+  if (ctrl.setSelectionRange) {
+    ctrl.focus();
+    ctrl.setSelectionRange(pos, pos);
+
+  // IE8 and below
+  } else if (ctrl.createTextRange) {
+    var range = ctrl.createTextRange();
+    range.collapse(true);
+    range.moveEnd('character', pos);
+    range.moveStart('character', pos);
+    range.select();
+  }
+}
+
+//updates the position of the cursor given the diff made by another user
+function updateCursorPostition(prev, curr, prevPos) {
+  let diff = dmp.diff_main(prev, curr);
+  let pos = prevPos;
+  if ((((diff[0][1]).length) <= prevPos)
+      || (prevPos === 0 && diff[0][0] === 1)){
+    pos++;
+  }
+  setCaretPosition(doc, pos);
 }
 
 // sendPatch sends the patches between the prev text and curr text to the server
