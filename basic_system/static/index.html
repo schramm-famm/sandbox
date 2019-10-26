@@ -1,34 +1,21 @@
 <!DOCTYPE html>
 <html>
 	<head>
-	  <title>RTC Test</title>
-	  <meta name="viewport" content="width=device-width, initial-scale=1"charset="UTF-8">
-	  <link rel="stylesheet" href="style.css"/>
+		<title>RTC Test</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1"charset="UTF-8">
+		<link rel="stylesheet" href="style.css"/>
 	</head>
 	
-	<div class="btn-group">
-	  <button id="Bold" onclick='console.log("hi")'>Bold</button>
-	  <button>Italic</button>
-	  <button>Underline</button>
-	</div>
+	<body>
+		<button id="Bold"><b>B</b></button>
+		<button id="Italic"><i>I</i></button>
+		<button id="Underline"><bzz>U</u></button>
+		
 
-		 <div id="doc" contenteditable="true" border="1px solid black">
-		 </div>
+		<div id="doc" contenteditable="true" border="1px solid black"></div>
 
-	<script src="script.js"></script>
-    <script src="diff_match_patch.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	
-	
-
+		<script src="script.js"></script>
+		<script src="diff_match_patch.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<body>
 </html>
-
-<script>
-
-	$(document).ready(function() {
-		$('#Bold').click(function() {
-			console.log('button');
-			document.execCommand('bold');
-		});
-	});
-</script>

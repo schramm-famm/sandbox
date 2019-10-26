@@ -5,15 +5,36 @@ document.addEventListener("DOMContentLoaded", async function() {
   dmp = new diff_match_patch();
   const doc = document.querySelector("#doc");
 
-  doc.value = await getState().catch(err => console.log(err));
-  doc.prevValue = doc.value;
+  doc.innerHTML = await getState().catch(err => console.log(err));
+  doc.innerHTMLPrev = doc.innerHTML;
   // On focus, save the value of the doc before any input
-  doc.addEventListener("focus", () => doc.prevValue = doc.value)
+  doc.addEventListener("focus", () => doc.innerHTMLPrev = doc.innerHTML)
 
   doc.addEventListener("input", (event) => {
-    sendPatch(doc.prevValue, doc.value);
+    sendPatch(doc.innerHTMLPrev, doc.innerHTML);
     // Update previous value of the doc
-    doc.prevValue = doc.value;
+    doc.innerHTMLPrev = doc.innerHTML;
+  });
+  
+  document.querySelector("#Bold").addEventListener("click", (event) => {
+	oldInnerHTML = doc.innerHTML;
+	document.execCommand('bold');
+	
+	sendPatch(oldInnerHTML, doc.innerHTML);
+  });
+	
+  document.querySelector("#Italic").addEventListener("click", (event) => {
+	oldInnerHTML = doc.innerHTML;
+	document.execCommand('italic');
+	
+	sendPatch(oldInnerHTML, doc.innerHTML);
+  });
+	
+  document.querySelector("#Underline").addEventListener("click", (event) => {
+	oldInnerHTML = doc.innerHTML;
+	document.execCommand('underline');
+	
+	sendPatch(oldInnerHTML, doc.innerHTML);
   });
 
   let client = new EventSource("/subscribe");
@@ -23,6 +44,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 });
 
+
+
 // getPatch handles EventSource events and applies the patch to the doc
 function getPatch(e) {
   let body = JSON.parse(e.data);
@@ -31,12 +54,12 @@ function getPatch(e) {
   if (body.patch) {
     let patches = dmp.patch_fromText(body.patch);
     const prevPos = doc.selectionStart; //the current cursor position
-    [doc.value] = dmp.patch_apply(patches, doc.value);
+    [doc.innerHTML] = dmp.patch_apply(patches, doc.innerHTML);
     console.log(prevPos);
     if(prevPos !== null){ // if there is a cursor position, update it.
-      updateCursorPostition(doc.prevValue, doc.value, prevPos);
+      updateCursorPostition(doc.innerHTMLPrev, doc.innerHTML, prevPos);
     }
-    doc.prevValue = doc.value;
+    doc.innerHTMLPrev = doc.innerHTML;
   } else if (body.id) {
     id = body.id;
   }
@@ -108,3 +131,4 @@ async function getState() {
     };
   });
 }
+

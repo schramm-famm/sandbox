@@ -2,19 +2,10 @@ html {
   font-family: "Helvetica", sans-serif;
 }
 
-body {
-  color: #333;
-  font-weight: 100;
-  max-width: 50em;
-  margin: 0 auto;
-}
-
-div:focus {
-  outline: none;
-}
-
 #doc {
   padding-top: 10px;
   font-size: 16px;
   border: 1px solid black;
 }
+
+
