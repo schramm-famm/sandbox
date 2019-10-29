@@ -10,5 +10,5 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Run Go tests
-      run: go test -v -bench=. -short
+      run: go test -v -bench=. -short ./igor_go_testing/
 
