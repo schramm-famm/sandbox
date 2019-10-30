@@ -30,11 +30,11 @@ function getPatch(e) {
   // client sent
   if (body.patch) {
     let patches = dmp.patch_fromText(body.patch);
-    const prevPos = doc.selectionStart; //the current cursor position
+    const cursorStart = doc.selectionStart; //the current cursor start position
+    const cursorEnd = doc.selectionEnd; //the current cursor end position
     [doc.value] = dmp.patch_apply(patches, doc.value);
-    console.log(prevPos);
-    if(prevPos !== null){ // if there is a cursor position, update it.
-      updateCursorPostition(doc.prevValue, doc.value, prevPos);
+    if (cursorStart !== null) { // if there is a cursor position, update it.
+      updateCursorPostition(doc.prevValue, doc.value, cursorStart, cursorEnd);
     }
     doc.prevValue = doc.value;
   } else if (body.id) {
@@ -43,31 +43,45 @@ function getPatch(e) {
 }
 
 //sets the cursor position
-function setCaretPosition(ctrl, pos) {
+function setCaretPosition(ctrl, start, end) {
   // Modern browsers
   if (ctrl.setSelectionRange) {
     ctrl.focus();
-    ctrl.setSelectionRange(pos, pos);
+    ctrl.setSelectionRange(start, end);
 
   // IE8 and below
   } else if (ctrl.createTextRange) {
     var range = ctrl.createTextRange();
     range.collapse(true);
-    range.moveEnd('character', pos);
-    range.moveStart('character', pos);
+    range.moveEnd('character', start);
+    range.moveStart('character', end);
     range.select();
   }
 }
 
 //updates the position of the cursor given the diff made by another user
-function updateCursorPostition(prev, curr, prevPos) {
+function updateCursorPostition(prev, curr, cursorStart, cursorEnd) {
   let diff = dmp.diff_main(prev, curr);
-  let pos = prevPos;
-  if ((((diff[0][1]).length) <= prevPos)
-      || (prevPos === 0 && diff[0][0] === 1)){
-    pos++;
+  let start = cursorStart;
+  let end = cursorEnd;
+  let i = 0;
+  let changePos = 0;
+  for (; i < diff.length; i++) {
+    let op = diff[i][0];
+    let len = diff[i][1].length;
+    if (op !== 0) {
+      if (changePos < end) {
+        end += op * (end - changePos < len ? end - changePos : len);
+        if (changePos < start) {
+          start += op * (start - changePos < len ? start - changePos : len);
+        }
+      }
+      break;
+    }
+    changePos += len;
   }
-  setCaretPosition(doc, pos);
+
+  setCaretPosition(doc, start, end);
 }
 
 // sendPatch sends the patches between the prev text and curr text to the server

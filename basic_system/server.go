@@ -101,6 +101,7 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if server sent events are supported
 	flusher, ok := w.(http.Flusher)
 	if !ok {
+		log.Println("Streaming unsupported")
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
