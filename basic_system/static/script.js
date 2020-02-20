@@ -40,7 +40,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 
 function getPatch(e) {
-<<<<<<< HEAD
   let patches = dmp.patch_fromText(e.data);
   const cursorStart = doc.selectionStart; //the current cursor start position
   const cursorEnd = doc.selectionEnd; //the current cursor end position

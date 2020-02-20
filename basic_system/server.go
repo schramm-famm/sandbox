@@ -7,7 +7,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
 
 func connect(h *Hub, w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -25,14 +27,11 @@ func connect(h *Hub, w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	fs := http.FileServer(http.Dir("static"))
-
 	h := newHub()
 	go h.run()
 
-	http.Handle("/", fs)
 	http.HandleFunc("/connect", func(w http.ResponseWriter, r *http.Request) {
 		connect(h, w, r)
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
