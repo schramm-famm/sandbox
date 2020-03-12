@@ -598,7 +598,49 @@ func TestPostConversationsHandler(t *testing.T) {
 
 		// REPLACE
 		{
-			Name: "Replace::Receiver Cursor::Sender After Receiver",
+			Name: "Replace::Receiver Cursor::Smaller::Sender After Receiver",
+			Data: Update{
+				CursorStartDelta: 1,
+				CursorEndDelta:   -1,
+				DocDelta:         -1,
+			},
+			SenderStart:              2,
+			SenderEnd:                4,
+			ReceiverStart:            0,
+			ReceiverEnd:              0,
+			ExpectedReceiverNewStart: 0,
+			ExpectedReceiverNewEnd:   0,
+		},
+		{
+			Name: "Replace::Receiver Cursor::Smaller::Sender Before Receiver",
+			Data: Update{
+				CursorStartDelta: 1,
+				CursorEndDelta:   -1,
+				DocDelta:         -1,
+			},
+			SenderStart:              0,
+			SenderEnd:                2,
+			ReceiverStart:            2,
+			ReceiverEnd:              2,
+			ExpectedReceiverNewStart: 0,
+			ExpectedReceiverNewEnd:   0,
+		},
+		{
+			Name: "Replace::Receiver Cursor::Smaller::Deleted Content Overlaps Receiver",
+			Data: Update{
+				CursorStartDelta: 1,
+				CursorEndDelta:   -1,
+				DocDelta:         -1,
+			},
+			SenderStart:              0,
+			SenderEnd:                2,
+			ReceiverStart:            1,
+			ReceiverEnd:              1,
+			ExpectedReceiverNewStart: 0,
+			ExpectedReceiverNewEnd:   0,
+		},
+		{
+			Name: "Replace::Receiver Range::Smaller::Sender After Receiver",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -612,7 +654,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   2,
 		},
 		{
-			Name: "Replace::Receiver Cursor::Sender Before Receiver",
+			Name: "Replace::Receiver Range::Smaller::Sender Before Receiver",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -626,7 +668,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   3,
 		},
 		{
-			Name: "Replace::Receiver Cursor::Replaced Content Overlaps Receiver End",
+			Name: "Replace::Receiver Range::Smaller::Replaced Content Overlaps Receiver End",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -640,7 +682,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   1, // FUDGE
 		},
 		{
-			Name: "Replace::Receiver Cursor::Replaced Content Overlaps Receiver Start",
+			Name: "Replace::Receiver Range::Smaller::Replaced Content Overlaps Receiver Start",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -654,7 +696,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   2,
 		},
 		{
-			Name: "Replace::Receiver Cursor::Replaced Content Overlaps Receiver Start & End",
+			Name: "Replace::Receiver Range::Smaller::Replaced Content Overlaps Receiver Start & End",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -3,
@@ -668,7 +710,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   0,
 		},
 		{
-			Name: "Replace::Receiver Cursor::Replaced Content Same as Receiver Start & End",
+			Name: "Replace::Receiver Range::Smaller::Replaced Content Same as Receiver Start & End",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -682,7 +724,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ExpectedReceiverNewEnd:   0,
 		},
 		{
-			Name: "Replace::Receiver Cursor::Replaced Content Surrouned by Receiver",
+			Name: "Replace::Receiver Range::Smaller::Replaced Content Surrouned by Receiver",
 			Data: Update{
 				CursorStartDelta: 1,
 				CursorEndDelta:   -1,
@@ -694,6 +736,34 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReceiverEnd:              4,
 			ExpectedReceiverNewStart: 0,
 			ExpectedReceiverNewEnd:   3,
+		},
+		{
+			Name: "Replace::Receiver Range::Same Size::Replaced Content Surrouned by Receiver",
+			Data: Update{
+				CursorStartDelta: 2,
+				CursorEndDelta:   0,
+				DocDelta:         0,
+			},
+			SenderStart:              1,
+			SenderEnd:                3,
+			ReceiverStart:            0,
+			ReceiverEnd:              4,
+			ExpectedReceiverNewStart: 0,
+			ExpectedReceiverNewEnd:   4,
+		},
+		{
+			Name: "Replace::Receiver Range::Bigger::Replaced Content Surrouned by Receiver",
+			Data: Update{
+				CursorStartDelta: 3,
+				CursorEndDelta:   1,
+				DocDelta:         1,
+			},
+			SenderStart:              1,
+			SenderEnd:                3,
+			ReceiverStart:            0,
+			ReceiverEnd:              4,
+			ExpectedReceiverNewStart: 0,
+			ExpectedReceiverNewEnd:   5,
 		},
 	}
 
